@@ -1,0 +1,58 @@
+<?php
+require 'db.php';
+require 'GoogleAuthenticator.php';
+
+if (!isset($_SESSION['2fa_pending_userID'])) {
+    header("Location: login.php");
+    exit;
+}
+
+$message = "";
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $submittedPin = $_POST['pin'] ?? '';
+    $userPin = is_string($submittedPin) ? trim($submittedPin) : '';
+    $userId = $_SESSION['2fa_pending_userID'];
+    $stmt = $pdo->prepare("SELECT TotpSecret, FirstName FROM users WHERE userID = ?");
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch();
+
+    $ga = new PHPGangsta_GoogleAuthenticator();
+    // Accept the previous, current, or next 30-second time interval.
+
+    $checkResult = $user
+        && !empty($user['TotpSecret'])// Confirms the user has an authenticator secret.
+        && preg_match('/^[0-9]{6}$/D', $userPin) === 1 // Confirms the input contains exactly six digits.
+        && $ga->verifyCode($user['TotpSecret'], $userPin, 1);// CHecks whether those digits match a valid TOTP code.
+
+    if ($checkResult) {
+        $update = $pdo->prepare("UPDATE users SET LoginDatetime = NOW(), Status = 1 WHERE userID = ?");
+        $update->execute([$userId]);
+        session_regenerate_id(true);
+        $_SESSION['userID'] = $userId;
+        $_SESSION['FirstName'] = $user['FirstName'];
+        unset($_SESSION['2fa_pending_userID']);
+        header("Location: dashboard.php");
+        exit;
+    } else {
+        $message = "<p style='color:red; font-weight:bold;'>Access Denied: Invalid or expired authenticator code.</p>";
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MFA Checkpoint</title>
+</head>
+<body style="font-family:sans-serif; max-width:400px; margin:40px auto; padding:20px; text-align:center; line-height:1.6;">
+    <h2>Google Authenticator</h2>
+    <p>Open your authenticator app and enter the current six-digit code for your account.</p>
+    <?php echo $message; ?>
+    <form method="POST">
+        <label for="pin">Authenticator code:</label><br>
+        <input id="pin" type="text" name="pin" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required autocomplete="off"
+            placeholder="000000" style="width:80%; padding:10px; font-size:18px; text-align:center; letter-spacing:4px; margin-bottom:15px;"><br>
+        <button type="submit" style="width:84%; padding:12px; background:#0076ff; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Verify Code</button>
+    </form>
+</body>
+</html>
