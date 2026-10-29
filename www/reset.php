@@ -22,8 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $newHash = password_hash($newPass, PASSWORD_BCRYPT);
 
             $update = $pdo->prepare(
-                "UPDATE users 
-                 SET Password = ? 
+                "UPDATE users
+                 SET Password = ?
                  WHERE Email = ?"
             );
 
@@ -49,46 +49,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 ?>
 
-<!DOCTYPE html>
-<html>
+<?php require_once __DIR__ . '/ui.php'; page_start('Reset password', false); ?>
 
-<head>
-    <title>Reset Password</title>
-</head>
-
-<body style="font-family:sans-serif; max-width:400px; margin:40px auto;">
 
     <h2>Reset Account Password</h2>
 
-    <?php echo $message; ?>
+    <?php if (!empty($message)): ?><div class="alert alert-info" role="status"><?php echo $message; ?></div><?php endif; ?>
 
     <form method="POST">
 
-        <label>Enter Account Email:</label><br>
+        <label class="form-label" for="email">Enter Account Email:</label><br>
 
-        <input
+        <input id="email"
             type="email"
-            name="email"
-            style="width:100%; padding:8px; margin:5px 0;"
+            name="email" autocomplete="email"
             required
-        >
+         class="form-control mb-3">
         <br>
 
-        <label>Enter New Password:</label><br>
+        <label class="form-label" for="new_password">Enter New Password:</label><br>
 
-        <input
+        <input id="new_password"
             type="password"
-            name="new_password"
-            style="width:100%; padding:8px; margin:5px 0;"
+            name="new_password" autocomplete="new-password"
             required
-        >
+         class="form-control mb-3">
         <br><br>
 
         <button
             type="submit"
-            style="padding:10px 15px; background:#666; color:#fff;
-                   border:none; border-radius:4px; cursor:pointer;"
-        >
+         class="btn btn-primary">
             Update Password Hash
         </button>
 
@@ -98,6 +88,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="login.php">Return to Login</a>
     </p>
 
-</body>
 
-</html>
+<?php page_end(); ?>

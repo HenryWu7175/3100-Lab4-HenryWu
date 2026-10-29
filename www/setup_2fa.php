@@ -45,84 +45,31 @@ match clock signature. Sync your device time and try again.</p>";
     }
 }
 ?>
-<!DOCTYPE html>
-<html>
+<?php require_once __DIR__ . '/ui.php'; page_start('Set up authenticator', false); ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-<head>
-    <title>Authenticator Setup</title>
-    <script src="qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        body {
-            font-family: sans-serif;
-            max-width: 450px;
-            margin: 40px auto;
-            padding: 20px;
-            line-height: 1.6;
-            text-align: center;
-        }
-
-        .qr-container {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 8px;
-            border: 1px dashed #ccc;
-        }
-
-        input[type="text"] {
-            width: 80%;
-            padding: 10px;
-            font-size: 18px;
-            letter-spacing: 4px;
-            text- align: center;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            margin: 10px 0;
-        }
-
-        .btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size:
-                16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 84%;
-        }
-    </style>
-</head>
-
-<body>
-    <h2>Lock Device Configuration</h2>
+    <h2>Set up your authenticator</h2>
     <p>Scan the code wrapper below using <strong>Google Authenticator</strong> or any
         TOTP terminal application:</p>
     <div class="qr-container">
         <div id="qrcode"></div>
     </div>
-    <p style="font-size: 13px; color: #666;">Manual Secret Key Configuration: <br><code
-            style="font-size:15px; font-weight:bold; color:#0076ff;"><?php echo $secretKey;
+    <p>Manual Secret Key Configuration: <br><code><?php echo $secretKey;
             ?></code></p>
-    <?php echo $message; ?>
+    <?php if (!empty($message)): ?><div class="alert alert-info" role="status"><?php echo $message; ?></div><?php endif; ?>
     <form method="POST">
-        <label><strong>Enter the 6-Digit Generated App Verification
+        <label class="form-label" for="code"><strong>Enter the 6-Digit Generated App Verification
                 Code:</strong></label><br>
-        <input type="text" name="code" maxlength="6" required autocomplete="off" placeholder="000000"><br><br>
-        <button type="submit" class="btn">Verify and Complete Handshake</button>
+        <input id="code" type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="off" placeholder="000000" class="form-control mb-3"><br><br>
+        <button type="submit" class="btn btn-primary">Activate authenticator</button>
     </form>
     <!-- Client-Side Javascript Injection Core Hook -->
     <script type="text/javascript">
         new QRCode(document.getElementById("qrcode"), {
-            text: "<?php echo $qrCodeDataUrl; ?>",
+            text: <?php echo json_encode($qrCodeDataUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
             width: 200,
             height: 200
         });
     </script>
-</body>
 
-</html>
+<?php page_end(); ?>

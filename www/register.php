@@ -166,106 +166,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
+<?php require_once __DIR__ . '/ui.php'; page_start('Create account', false); ?>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Register & Verify Stack</title>
-</head>
 
-<body
-    style="
-        font-family:sans-serif;
-        max-width:400px;
-        margin:40px auto;
-        padding:20px;
-        line-height:1.6;
-    "
->
+    <h2>Create your account</h2>
 
-    <h2>Step 1: Create Account Portal</h2>
-
-    <?php echo $message; ?>
+    <?php if (!empty($message)): ?><div class="alert alert-info" role="status"><?php echo $message; ?></div><?php endif; ?>
 
     <form method="POST">
 
-        <label>First Name:</label>
+        <label class="form-label" for="firstname">First Name:</label>
         <br>
 
-        <input
+        <input id="firstname"
             type="text"
             name="firstname"
-            style="
-                width:100%;
-                padding:8px;
-                margin:5px 0;
-            "
             required
-        >
+         class="form-control mb-3">
 
         <br>
 
-        <label>Last Name:</label>
+        <label class="form-label" for="lastname">Last Name:</label>
         <br>
 
-        <input
+        <input id="lastname"
             type="text"
             name="lastname"
-            style="
-                width:100%;
-                padding:8px;
-                margin:5px 0;
-            "
             required
-        >
+         class="form-control mb-3">
 
         <br>
 
-        <label>Email Address:</label>
+        <label class="form-label" for="email">Email Address:</label>
         <br>
 
-        <input
+        <input id="email"
             type="email"
-            name="email"
-            style="
-                width:100%;
-                padding:8px;
-                margin:5px 0;
-            "
+            name="email" autocomplete="email"
             required
-        >
+         class="form-control mb-3">
 
         <br>
 
-        <label>Password:</label>
+        <label class="form-label" for="password">Password:</label>
         <br>
 
-        <input
+        <input id="password"
             type="password"
-            name="password"
-            style="
-                width:100%;
-                padding:8px;
-                margin:5px 0;
-            "
+            name="password" autocomplete="new-password"
             required
-        >
+         class="form-control mb-3">
 
         <br><br>
 
         <button
             type="submit"
-            style="
-                padding:10px 15px;
-                background:#0076ff;
-                color:#fff;
-                border:none;
-                border-radius:4px;
-                cursor:pointer;
-                font-weight:bold;
-            "
-        >
+         class="btn btn-primary">
             Register Account
         </button>
 
@@ -277,18 +233,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Looking to verify an existing link?
 
         <a href="verify_email.php">
-            Manual Verification Input Terminal
+            Verify your email
         </a>
     </p>
     <p>
         Already have an account?
 
         <a href="login.php">
-            Sign-In Here
+            Welcome back Here
         </a>
     </p>
-    
 
-</body>
 
-</html>
+
+<?php page_end(); ?>

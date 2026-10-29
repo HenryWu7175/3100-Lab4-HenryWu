@@ -1,0 +1,32 @@
+:root { --bs-primary: #3159cc; --bs-primary-rgb: 49,89,204; }
+body { background: #f3f5fa; color: #243047; min-height: 100vh; }
+.navbar { min-height: 78px; }
+.brand-mark { display: inline-grid; place-items: center; background: #3159cc; color: white; width: 36px; height: 36px; border-radius: 10px; font-size: .85rem; margin-right: .6rem; }
+.eyebrow { color: #53647f; font-size: .72rem; font-weight: 700; letter-spacing: .16em; }
+.account-card { max-width: 580px; }
+.card { border-radius: 18px; }
+h1, h2 { font-weight: 700; letter-spacing: -.035em; margin-bottom: 1.5rem; }
+h1 { font-size: clamp(1.8rem, 4vw, 2.7rem); }
+h2 { font-size: clamp(1.65rem, 4vw, 2.15rem); }
+h3 { font-size: 1.1rem; font-weight: 650; margin: 1.5rem 0 1rem; }
+a { text-underline-offset: 3px; }
+.btn { border-radius: 9px; padding: .7rem 1.1rem; font-weight: 600; }
+.btn-primary { --bs-btn-bg: #3159cc; --bs-btn-border-color: #3159cc; --bs-btn-hover-bg: #2445a5; --bs-btn-hover-border-color: #2445a5; }
+.form-control { min-height: 46px; border-radius: 9px; }
+.form-label { font-size: .9rem; font-weight: 600; }
+form br { display: none; }
+form .btn { margin-top: .75rem; }
+.account-card form .btn { width: 100%; }
+.alert p:last-child { margin-bottom: 0; }
+.table th { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: #53647f; white-space: nowrap; }
+.table td { vertical-align: middle; min-width: 100px; }
+.table code { overflow-wrap: anywhere; }
+.status-badge { display: inline-block; padding: .35rem .65rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
+.status-online { background: #e0f5eb; color: #146748; }
+.status-offline { background: #fff1d7; color: #78520a; }
+.token-box, .pin-box { font-family: var(--bs-font-monospace); overflow-wrap: anywhere; }
+.header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.qr-container { display: flex; justify-content: center; padding: 1.5rem; background: #f7f9fc; border-radius: 12px; margin-bottom: 1.5rem; }
+.qr-container img, .qr-container canvas { max-width: 100%; height: auto; }
+.skip-link { position: absolute; background: white; z-index: 1100; padding: 1rem; }
+@media (max-width: 575px) { .card-body { padding: 1.25rem !important; } .workspace-card .table-responsive { margin-right: -1.25rem; } }

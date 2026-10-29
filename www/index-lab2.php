@@ -1,6 +1,8 @@
 <?php
+require_once __DIR__ . '/ui.php';
+page_start('Lab diagnostics');
 
-echo "<h1>Hello from your Windows 11 3-Tier Docker Lab!</h1>";
+echo "<h1>Lab diagnostics</h1>";
 echo "<h3>PHP Status: Active</h3>";
 
 // Database Connection Parameters
@@ -26,4 +28,5 @@ try {
           </p>";
 }
 
+page_end();
 ?>

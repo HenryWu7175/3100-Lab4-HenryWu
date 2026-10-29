@@ -59,55 +59,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || !empty($tokenParam)) {
 
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Activation Core Terminal</title>
-</head>
+<?php require_once __DIR__ . '/ui.php'; page_start('Verify email', false); ?>
 
-<body
-    style="
-        font-family:sans-serif;
-        max-width:400px;
-        margin:40px auto;
-        padding:20px;
-    "
->
-    <h2>Step 2: Email Authentication Verification</h2>
+    <h2>Verify your email</h2>
 
-    <?php echo $message; ?>
+    <?php if (!empty($message)): ?><div class="alert alert-info" role="status"><?php echo $message; ?></div><?php endif; ?>
 
     <form method="POST">
 
-        <label>Paste Simulated Email Token String:</label><br>
+        <label class="form-label" for="token">Verification token</label><br>
 
-        <input
+        <input id="token"
             type="text"
             name="token"
-            value="<?php echo htmlspecialchars($tokenParam); ?>"
-            style="
-                width:100%;
-                padding:8px;
-                margin:10px 0;
-            "
+            value="<?php echo htmlspecialchars($tokenParam, ENT_QUOTES, 'UTF-8'); ?>"
+            class="form-control mb-3"
             required
         >
         <br>
 
         <button
             type="submit"
-            style="
-                padding:10px 15px;
-                background:#28a745;
-                color:#fff;
-                border:none;
-                border-radius:4px;
-                cursor:pointer;
-            "
-        >
-            Verify Email Authenticity
+         class="btn btn-primary">
+            Verify email
         </button>
 
     </form>
-</body>
-</html>
+
+<?php page_end(); ?>

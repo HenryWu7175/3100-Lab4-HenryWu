@@ -29,8 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Stop unverified emails from completing challenge entries
             if ($user['EmailVerified'] == 0) {
 
-                die("<p style='color:red; font-family:sans-serif; max-width:400px; margin:40px
-auto;'>￿ Login Blocked: Complete your baseline link validation first.</p>");
+                require_once __DIR__ . '/ui.php';
+                page_start('Verify your email');
+                echo '<h1>Check your inbox</h1><div class="alert alert-warning" role="alert">Verify your email address before signing in.</div><a class="btn btn-primary" href="verify_email.php">Verify email</a>';
+                page_end();
+                exit;
             }
 
             // Keep the user pending until authenticator verification succeeds.
@@ -57,57 +60,30 @@ auto;'>￿ Login Blocked: Complete your baseline link validation first.</p>");
 
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
+<?php require_once __DIR__ . '/ui.php'; page_start('Sign in', false); ?>
 
-<head>
-    <meta charset="UTF-8">
-    <title>System Login Proxy</title>
-</head>
 
-<body style="
-        font-family:sans-serif;
-        max-width:400px;
-        margin:40px auto;
-        padding:20px;
-    ">
+    <h2>Welcome back</h2>
 
-    <h2>Sign-In</h2>
-
-    <?php echo $message; ?>
+    <?php if (!empty($message)): ?><div class="alert alert-info" role="status"><?php echo $message; ?></div><?php endif; ?>
 
     <form method="POST">
 
-        <label>Email Address:</label>
+        <label class="form-label" for="email">Email Address:</label>
         <br>
 
-        <input type="email" name="email" style="
-                width:100%;
-                padding:8px;
-                margin:5px 0;
-            " required>
+        <input id="email" type="email" name="email" autocomplete="email" required class="form-control mb-3">
 
         <br>
 
-        <label>Password:</label>
+        <label class="form-label" for="password">Password:</label>
         <br>
 
-        <input type="password" name="password" style="
-                width:100%;
-                padding:8px;
-                margin:5px 0;
-            " required>
+        <input id="password" type="password" name="password" autocomplete="current-password" required class="form-control mb-3">
 
         <br><br>
 
-        <button type="submit" style="
-                padding:10px 15px;
-                background:#0076ff;
-                color:#fff;
-                border:none;
-                border-radius:4px;
-                cursor:pointer;
-            ">
+        <button type="submit" class="btn btn-primary">
             Login
         </button>
 
@@ -123,9 +99,8 @@ auto;'>￿ Login Blocked: Complete your baseline link validation first.</p>");
     <br>
 
     <a href="register.php">
-        Dont have an account? Register here!
+        New here? Create an account
     </a>
 
-</body>
 
-</html>
+<?php page_end(); ?>

@@ -38,21 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>MFA Checkpoint</title>
-</head>
-<body style="font-family:sans-serif; max-width:400px; margin:40px auto; padding:20px; text-align:center; line-height:1.6;">
+<?php require_once __DIR__ . '/ui.php'; page_start('Verify your identity', false); ?>
+
     <h2>Google Authenticator</h2>
     <p>Open your authenticator app and enter the current six-digit code for your account.</p>
-    <?php echo $message; ?>
+    <?php if (!empty($message)): ?><div class="alert alert-info" role="status"><?php echo $message; ?></div><?php endif; ?>
     <form method="POST">
-        <label for="pin">Authenticator code:</label><br>
+        <label class="form-label" for="pin">Authenticator code:</label><br>
         <input id="pin" type="text" name="pin" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required autocomplete="off"
-            placeholder="000000" style="width:80%; padding:10px; font-size:18px; text-align:center; letter-spacing:4px; margin-bottom:15px;"><br>
-        <button type="submit" style="width:84%; padding:12px; background:#0076ff; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Verify Code</button>
+            placeholder="000000" class="form-control mb-3"><br>
+        <button type="submit" class="btn btn-primary">Verify Code</button>
     </form>
-</body>
-</html>
+
+<?php page_end(); ?>

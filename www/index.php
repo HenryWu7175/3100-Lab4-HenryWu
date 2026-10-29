@@ -1,5 +1,7 @@
 <?php
-echo "<h1>Hello from PHP!</h1>";
+require_once __DIR__ . '/ui.php';
+page_start('Welcome');
+echo '<span class="badge text-bg-primary mb-3">WEB SERVICES LAB</span><h1>Your account, connected.</h1><p class="text-secondary">Create an account, verify your email, and sign in with your authenticator.</p><div class="d-grid gap-2 d-sm-flex mb-4"><a href="register.php" class="btn btn-primary">Create account</a><a href="login.php" class="btn btn-outline-primary">Sign in</a></div>';
 
 $host = getenv("DB_HOST");
 $user = getenv("DB_USER");
@@ -14,7 +16,7 @@ if ($conn->connect_error) {
     die("Database connection failed: " . $conn->connect_error);
 }
 
-echo "<p>Successfully connected to MySQL!</p>";
+echo '<div class="alert alert-success">Database connected.</div>';
 
 // Create the users table if it does not already exist
 $sql = "CREATE TABLE IF NOT EXISTS users (
@@ -34,10 +36,11 @@ $sql = "CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB;";
 
 if ($conn->query($sql) === TRUE) {
-    echo "<p>Users table is ready!</p>";
+    echo '<p class="small text-secondary mb-0">Account services are ready.</p>';
 } else {
     echo "<p>Error creating users table: " . $conn->error . "</p>";
 }
 
 $conn->close();
+page_end();
 ?>

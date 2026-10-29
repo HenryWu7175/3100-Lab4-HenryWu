@@ -15,14 +15,8 @@ $profile = $stmt->fetch();
 
 ?>
 
-<!DOCTYPE html>
-<html>
+<?php require_once __DIR__ . '/ui.php'; page_start('Your dashboard', true); ?>
 
-<head>
-    <title>Dashboard</title>
-</head>
-
-<body style="font-family:sans-serif; max-width:600px; margin:40px auto;">
 
     <h2>
         Welcome,
@@ -32,32 +26,32 @@ $profile = $stmt->fetch();
         ?>!
     </h2>
 
-    <p style="color:green; font-weight:bold;">
+    <p>
         Status: Session Authenticated
         (Status Code: <?php echo $profile['Status']; ?>)
     </p>
 
-    <div style="background:#f4f4f4; padding:15px; border-radius:5px; margin-bottom:20px;">
+    <div>
 
-        <h3>System Diagnostics Metrics:</h3>
+        <h3>Account details</h3>
 
-        <ul>
-            <li>
+        <ul class="list-group list-group-flush mb-4">
+            <li class="list-group-item px-0 py-3">
                 <strong>User Account ID:</strong>
                 <?php echo $profile['userID']; ?>
             </li>
 
-            <li>
+            <li class="list-group-item px-0 py-3">
                 <strong>Registered On:</strong>
                 <?php echo $profile['RegDatetime']; ?>
             </li>
 
-            <li>
+            <li class="list-group-item px-0 py-3">
                 <strong>Last Login Captured:</strong>
                 <?php echo $profile['LoginDatetime']; ?>
             </li>
 
-            <li>
+            <li class="list-group-item px-0 py-3">
                 <strong>Previous Logout Captured:</strong>
                 <?php echo $profile['LogoutDatetime'] ?? 'Never Logged Out'; ?>
             </li>
@@ -66,13 +60,10 @@ $profile = $stmt->fetch();
     </div>
 
     <a
-        href="logout.php"
-        style="padding:10px 15px; background:#ff3b30; color:#fff;
-               text-decoration:none; border-radius:4px;"
+        class="btn btn-outline-danger" href="logout.php"
     >
         Secure Logout
     </a>
 
-</body>
 
-</html>
+<?php page_end(); ?>
