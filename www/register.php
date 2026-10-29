@@ -72,9 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
 
                 // Create email verification link
+                $appUrl = rtrim(getenv('APP_URL') ?: 'http://localhost:8080', '/');
                 $verifyLink =
-                    "http://localhost:8080/verify_email.php?token="
-                    . $verificationToken;
+                    $appUrl . "/verify_email.php?token="
+                    . urlencode($verificationToken);
 
                 // Create verification email
                 $emailSubject =
