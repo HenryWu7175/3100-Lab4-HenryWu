@@ -26,6 +26,7 @@ $sql = "CREATE TABLE IF NOT EXISTS users (
     EmailVerified TINYINT(1) NOT NULL DEFAULT 0,
     EmailVerificationToken VARCHAR(32) NULL,
     TotpSecret VARCHAR(32) NULL,
+    Role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
     Status INT DEFAULT 0,
     RegDatetime DATETIME DEFAULT CURRENT_TIMESTAMP,
     LoginDatetime DATETIME NULL,

@@ -2,6 +2,40 @@
 
 require 'db.php';
 
+if (!isset($_SESSION['userID'])) {
+    header('Location: login.php');
+    exit;
+}
+
+$roleCheck = $pdo->prepare('SELECT Role FROM users WHERE userID = ?');
+$roleCheck->execute([$_SESSION['userID']]);
+if ($roleCheck->fetchColumn() !== 'admin') {
+    http_response_code(403);
+    exit('Access denied. Administrators only.');
+}
+
+$_SESSION['admin_csrf'] ??= bin2hex(random_bytes(32));
+$adminMessage = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrf = $_POST['csrf'] ?? '';
+    if (!is_string($csrf) || !hash_equals($_SESSION['admin_csrf'], $csrf)) {
+        http_response_code(403);
+        exit('Invalid request. Refresh the page and try again.');
+    }
+    $email = $_POST['email'] ?? '';
+    if (!is_string($email) || !filter_var(trim($email), FILTER_VALIDATE_EMAIL)) {
+        $adminMessage = 'Enter a valid email address.';
+    } else {
+        $promote = $pdo->prepare(
+            "UPDATE users SET Role = 'admin' WHERE Email = ? AND EmailVerified = 1 AND Role = 'user'"
+        );
+        $promote->execute([trim($email)]);
+        $adminMessage = $promote->rowCount() > 0
+            ? 'Administrator access granted.'
+            : 'No eligible account found. The user must register and verify their email first, and must not already be an admin.';
+    }
+}
+
 try {
     $stmt = $pdo->query(
         "SELECT
@@ -9,6 +43,7 @@ try {
             FirstName,
             LastName,
             Email,
+            Role,
             Status,
             EmailVerified,
             EmailVerificationToken,
@@ -157,6 +192,16 @@ try {
         (Security Lifecycle Diagnostics)
     </h3>
 
+    <h3>Grant administrator access</h3>
+    <p>New administrators must register normally and verify their email before you promote them.</p>
+    <p><?php echo htmlspecialchars($adminMessage, ENT_QUOTES, 'UTF-8'); ?></p>
+    <form method="post" action="admin.php">
+        <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($_SESSION['admin_csrf'], ENT_QUOTES, 'UTF-8'); ?>">
+        <label for="admin-email">Registered user's email</label>
+        <input id="admin-email" type="email" name="email" required>
+        <button type="submit">Grant admin access</button>
+    </form>
+
     <table>
 
         <thead>
@@ -164,6 +209,7 @@ try {
                 <th>User ID</th>
                 <th>Full Name</th>
                 <th>Email Address</th>
+                <th>Role</th>
                 <th>Verification State</th>
                 <th>Live Security Token</th>
                 <th>2FA Setup</th>
@@ -199,6 +245,9 @@ try {
                             <code>
                                 <?php echo htmlspecialchars($row['Email']); ?>
                             </code>
+                        </td>
+                        <td>
+                            <?php echo htmlspecialchars($row['Role'], ENT_QUOTES, 'UTF-8'); ?>
                         </td>
 
                         <!-- Email Verification Status -->
