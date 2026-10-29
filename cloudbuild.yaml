@@ -1,0 +1,48 @@
+# Connect a push-to-main trigger to this file. Set _VM_ZONE in the trigger.
+# The build service account needs IAP/SSH access and passwordless sudo on the VM.
+substitutions:
+  _VM_NAME: instance-20261027-204759
+  _VM_ZONE: SET_VM_ZONE
+  _DEPLOY_DIR: /home/tuq78148/3100-Lab4-HenryWu
+
+timeout: 1200s
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - id: php-syntax
+    name: php:8.2-cli
+    entrypoint: sh
+    args:
+      - -ec
+      - find www -name '*.php' -type f -print0 | xargs -0 -n 1 php -l
+
+  - id: package
+    name: ubuntu:24.04
+    entrypoint: bash
+    args:
+      - -ec
+      - |
+        # Explicit list excludes .env, .git, and persistent database files.
+        tar -czf /workspace/deploy.tar.gz www nginx.conf docker-compose.yml scripts/deploy-vm.sh
+
+  - id: deploy-vm
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+    entrypoint: bash
+    env:
+      - 'VM_NAME=${_VM_NAME}'
+      - 'VM_ZONE=${_VM_ZONE}'
+      - 'DEPLOY_DIR=${_DEPLOY_DIR}'
+      - 'BUILD_ID=$BUILD_ID'
+    args:
+      - -euc
+      - |
+        test "$$VM_ZONE" != SET_VM_ZONE || { echo 'Set _VM_ZONE in the Cloud Build trigger.'; exit 1; }
+        [[ "$$VM_NAME" =~ ^[a-z0-9-]+$$ ]]
+        [[ "$$VM_ZONE" =~ ^[a-z0-9-]+$$ ]]
+        [[ "$$DEPLOY_DIR" =~ ^/home/[a-zA-Z0-9_/-]+$$ ]]
+        gcloud compute scp /workspace/deploy.tar.gz "$$VM_NAME:/tmp/lab-deploy-$$BUILD_ID.tar.gz" \
+          --project="$PROJECT_ID" --zone="$$VM_ZONE" --tunnel-through-iap --quiet
+        gcloud compute ssh "$$VM_NAME" \
+          --project="$PROJECT_ID" --zone="$$VM_ZONE" --tunnel-through-iap --quiet \
+          --command="tar -xOf /tmp/lab-deploy-$$BUILD_ID.tar.gz scripts/deploy-vm.sh | sudo -n bash -s -- '$$DEPLOY_DIR' '/tmp/lab-deploy-$$BUILD_ID.tar.gz'"
