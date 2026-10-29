@@ -4,10 +4,14 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$host = 'database';
-$db = 'lab_db';
-$user = 'lab_user';
-$pass = 'userpassword456';
+
+$host = getenv('DB_HOST');
+$db = getenv('DB_NAME');
+$user = getenv('DB_USER');
+$pass = getenv('DB_PASSWORD');
+
+// print("DB Connecting to database with host: $host, user: $user, pass: $pass, db: $db<br>");
+
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

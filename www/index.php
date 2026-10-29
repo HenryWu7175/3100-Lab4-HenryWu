@@ -1,10 +1,12 @@
 <?php
 echo "<h1>Hello from PHP!</h1>";
 
-$host = "database";
-$user = "root";
-$password = getenv("MYSQL_ROOT_PASSWORD");
-$db = getenv("MYSQL_DATABASE");
+$host = getenv("DB_HOST");
+$user = getenv("DB_USER");
+$password = getenv("DB_PASSWORD");
+$db = getenv("DB_NAME");
+
+// print("index Connecting to database with host: $host, user: $user, pass: $password, db: $db<br>");
 
 $conn = new mysqli($host, $user, $password, $db);
 
