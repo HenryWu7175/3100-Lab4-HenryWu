@@ -12,7 +12,7 @@ try {
             Status,
             EmailVerified,
             EmailVerificationToken,
-            TwoFactorPin,
+            (TotpSecret IS NOT NULL AND TotpSecret <> '') AS TwoFactorEnabled,
             RegDatetime,
             LoginDatetime,
             LogoutDatetime
@@ -166,7 +166,7 @@ try {
                 <th>Email Address</th>
                 <th>Verification State</th>
                 <th>Live Security Token</th>
-                <th>Active 2FA PIN</th>
+                <th>2FA Setup</th>
                 <th>Session State</th>
                 <th>Last Login</th>
                 <th>Last Logout</th>
@@ -249,13 +249,13 @@ try {
 
                         </td>
 
-                        <!-- Two-Factor Authentication PIN -->
+                        <!-- Authenticator enrollment status -->
                         <td>
 
-                            <?php if (!empty($row['TwoFactorPin'])): ?>
+                            <?php if (!empty($row['TwoFactorEnabled'])): ?>
 
                                 <span class="pin-box">
-                                    <?php echo $row['TwoFactorPin']; ?>
+                                    Configured
                                 </span>
 
                             <?php else: ?>
