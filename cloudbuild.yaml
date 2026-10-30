@@ -2,7 +2,7 @@
 # The build service account needs IAP/SSH access and passwordless sudo on the VM.
 substitutions:
   _VM_NAME: instance-20261027-204759
-  _VM_ZONE: SET_VM_ZONE
+  _VM_ZONE: us-east1-b
   _DEPLOY_DIR: /home/tuq78148/3100-Lab4-HenryWu
 
 timeout: 1200s
