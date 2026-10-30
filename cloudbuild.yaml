@@ -17,6 +17,11 @@ steps:
       - -ec
       - find www -name '*.php' -type f -print0 | xargs -0 -n 1 php -l
 
+  - id: unit-tests
+    name: php:8.2-cli
+    entrypoint: php
+    args: ['tests/run.php']
+
   - id: package
     name: ubuntu:24.04
     entrypoint: bash

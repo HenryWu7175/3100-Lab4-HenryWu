@@ -1,6 +1,6 @@
 <?php
 require 'db.php';
-require 'GoogleAuthenticator.php';
+require_once __DIR__ . '/account_helpers.php';
 
 if (!isset($_SESSION['2fa_pending_userID'])) {
     header("Location: login.php");
@@ -16,13 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
 
-    $ga = new PHPGangsta_GoogleAuthenticator();
-    // Accept the previous, current, or next 30-second time interval.
-
-    $checkResult = $user
-        && !empty($user['TotpSecret'])// Confirms the user has an authenticator secret.
-        && preg_match('/^[0-9]{6}$/D', $userPin) === 1 // Confirms the input contains exactly six digits.
-        && $ga->verifyCode($user['TotpSecret'], $userPin, 1);// CHecks whether those digits match a valid TOTP code.
+    $checkResult = $user && valid_authenticator_code($user['TotpSecret'], $userPin);
 
     if ($checkResult) {
         $update = $pdo->prepare("UPDATE users SET LoginDatetime = NOW(), Status = 1 WHERE userID = ?");

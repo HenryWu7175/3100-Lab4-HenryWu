@@ -2,6 +2,7 @@
 
 require 'db.php';
 require 'mailer.php';
+require_once __DIR__ . '/account_helpers.php';
 
 $message = "";
 
@@ -72,10 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
 
                 // Create email verification link
-                $appUrl = rtrim(getenv('APP_URL') ?: 'http://localhost:8080', '/');
-                $verifyLink =
-                    $appUrl . "/verify_email.php?token="
-                    . urlencode($verificationToken);
+                $verifyLink = verification_url(
+                    getenv('APP_URL') ?: 'http://localhost:8080',
+                    $verificationToken
+                );
 
                 // Create verification email
                 $emailSubject =
