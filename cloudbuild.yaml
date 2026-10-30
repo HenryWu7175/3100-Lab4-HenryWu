@@ -27,7 +27,8 @@ steps:
         tar -czf /workspace/deploy.tar.gz www nginx.conf docker-compose.yml scripts/deploy-vm.sh
 
   - id: deploy-vm
-    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+    # The slim variant includes openssh-client for gcloud compute scp/ssh.
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:slim
     entrypoint: bash
     env:
       - 'VM_NAME=${_VM_NAME}'
