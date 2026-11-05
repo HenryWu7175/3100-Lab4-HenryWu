@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Create email verification link
                 $verifyLink = verification_url(
-                    getenv('APP_URL') ?: 'http://localhost:8080',
+                    getenv('APP_URL'),
                     $verificationToken
                 );
 

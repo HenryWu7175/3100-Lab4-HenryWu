@@ -28,7 +28,7 @@ function sendSystemMail($toEmail, $toName, $subject, $htmlBody)
         $mail->Password = $smtpPass;
         $mail->Port = $smtpPort;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
+        $mail->SMTPDebug = SMTP::DEBUG_SERVER;
 
         // Recipients
         $mail->setFrom(
