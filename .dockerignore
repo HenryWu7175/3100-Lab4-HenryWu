@@ -1,0 +1,9 @@
+**
+!app-processor/
+!app-processor/**
+!ai-worker/
+!ai-worker/**
+!shared/
+!shared/**
+!composer.json
+!composer.lock

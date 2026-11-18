@@ -1,0 +1,51 @@
+name: smart-assets
+
+x-database-env: &database-env
+  DB_HOST: postgres-db
+  DB_NAME: smart_assets
+  DB_USER: assets
+  DB_PASS: ${SMART_ASSETS_DB_PASS:?Set SMART_ASSETS_DB_PASS for local development}
+
+services:
+  postgres-db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: smart_assets
+      POSTGRES_USER: assets
+      POSTGRES_PASSWORD: ${SMART_ASSETS_DB_PASS:?Set SMART_ASSETS_DB_PASS for local development}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U assets -d smart_assets"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app-processor:
+    build:
+      dockerfile: app-processor/Dockerfile
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment: *database-env
+    volumes:
+      - uploads:/var/www/html/storage/uploads
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  ai-worker:
+    build:
+      dockerfile: ai-worker/Dockerfile
+    command: ["php", "local_poller.php"]
+    environment: *database-env
+    volumes:
+      - uploads:/var/www/html/storage/uploads:ro
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  pgdata:
+  uploads:

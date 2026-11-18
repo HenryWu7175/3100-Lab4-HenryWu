@@ -1,0 +1,13 @@
+{
+    "name": "cis3100/smart-assets",
+    "require": {
+        "php": "^8.3",
+        "google/cloud-storage": "^2.0"
+    },
+    "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
+        "sort-packages": true
+    }
+}

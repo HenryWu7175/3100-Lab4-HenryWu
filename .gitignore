@@ -1,3 +1,4 @@
 .env
+/.env.smart-assets.local
 /db_data/
 /project-questions-and-answers.txt
