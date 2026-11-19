@@ -45,6 +45,28 @@ Use `docker compose --env-file .env.smart-assets.local -f docker-compose.smart-a
 
 **Verify.** Upload in cloud mode and confirm the mock result appears. For a direct GCS copy test, create a matching asset row first. Replay the event after completion and send duplicate deliveries concurrently. Confirm only one result is committed and that transient errors are retried.
 
+### Connect a GCP test environment
+
+Deploy the app and worker images to Cloud Run on port 8080, with both services connected to the same initialized PostgreSQL database. Set `ENV_MODE=CLOUD` on the app and `GCS_BUCKET_NAME` on both services. Give the app's runtime identity `roles/storage.objectCreator` on the bucket. The worker image starts Apache by default. Keep the worker's Cloud Run Invoker IAM check enabled and grant access to the Pub/Sub push identity on that service. The mock worker uses the finalized-object metadata and does not download the object.
+
+The following PowerShell commands assume the project and private worker already exist. Set the three values for your project before running them.
+
+```powershell
+$project = 'your-gcp-project'
+$bucket = 'your-unique-smart-assets-bucket'
+$workerUrl = 'https://your-private-worker.run.app'
+$invoker = "pubsub-invoker-sa@${project}.iam.gserviceaccount.com"
+
+gcloud storage buckets create "gs://$bucket" --project=$project --location=us-central1 --uniform-bucket-level-access --public-access-prevention
+gcloud pubsub topics create asset-upload-topic --project=$project
+gcloud iam service-accounts create pubsub-invoker-sa --project=$project
+gcloud run services add-iam-policy-binding ai-worker --project=$project --region=us-central1 --member="serviceAccount:$invoker" --role=roles/run.invoker
+gcloud pubsub subscriptions create asset-upload-push --project=$project --topic=asset-upload-topic --push-endpoint="$workerUrl/worker.php" --push-auth-service-account=$invoker --push-auth-token-audience=$workerUrl
+gcloud storage buckets notifications create "gs://$bucket" --project=$project --topic=asset-upload-topic --event-types=OBJECT_FINALIZE --payload-format=json
+```
+
+Check that the Cloud Storage service agent has `roles/pubsub.publisher` on the topic and that Pub/Sub can mint tokens for the push identity. The caller configuring the push subscription needs permission to act as that identity. [Cloud Storage notifications](https://docs.cloud.google.com/storage/docs/reporting-changes) · [Authenticated Pub/Sub push](https://docs.cloud.google.com/pubsub/docs/authenticate-push-subscriptions)
+
 ## Phase 3 — Vertex AI and cross-modal search
 
 - Configure `GEMINI_MODEL`, `TEXT_EMBED_MODEL`, and `MULTIMODAL_EMBED_MODEL` through environment variables. Before implementation, verify model availability in `us-central1`, supported media, and output dimensions.

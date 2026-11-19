@@ -5,6 +5,7 @@ use Google\Cloud\Storage\StorageClient;
 
 final class StorageAdapter
 {
+    public const CLOUD_UPLOAD_FAILED = 'The cloud upload could not be confirmed.';
     private const LOCAL_DIRECTORY = '/var/www/html/storage/uploads/';
     private readonly string $bucket;
 

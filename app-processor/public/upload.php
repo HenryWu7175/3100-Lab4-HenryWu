@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require dirname(__DIR__) . '/shared/Database.php';
+require dirname(__DIR__) . '/shared/StorageAdapter.php';
 header('Content-Type: application/json');
 
 function respond(int $status, array $body): never
@@ -34,27 +35,36 @@ if (!in_array($mime, ['image/jpeg', 'image/png', 'application/pdf', 'audio/mpeg'
     respond(415, ['error' => 'Supported formats are JPEG, PNG, PDF, MP3, and WAV.']);
 }
 
-$stored = false;
 try {
     $db = connect_database();
+    $storage = new StorageAdapter();
     $id = $db->query('SELECT gen_random_uuid()')->fetchColumn();
-    $path = dirname(__DIR__) . '/storage/uploads/' . $id;
-    $stored = move_uploaded_file($file['tmp_name'], $path);
-    if (!$stored) {
-        throw new RuntimeException('Could not store upload.');
-    }
-    $insert = $db->prepare(
-        'INSERT INTO assets (id, filename, mime_type, storage_uri) VALUES (?, ?, ?, ?) RETURNING status'
-    );
     $filename = mb_scrub(str_replace("\0", '', $file['name']), 'UTF-8');
-    $insert->execute([$id, $filename, $mime, $path]);
-    respond(202, ['id' => $id, 'status' => $insert->fetchColumn()]);
-} catch (Throwable $exception) {
-    // A lost database connection can leave the INSERT outcome unknown.
-    // Retain its file so a committed asset can still be processed.
-    if ($stored && $exception instanceof PDOException && str_starts_with((string) $exception->getCode(), '22')) {
-        unlink($path);
+    $uri = $storage->uri($id, $filename);
+    $insert = $db->prepare(
+        'INSERT INTO assets (id, filename, mime_type, storage_uri) VALUES (?, ?, ?, ?)'
+    );
+    $cloud = str_starts_with($uri, 'gs://');
+    if ($cloud) {
+        $insert->execute([$id, $filename, $mime, $uri]);
     }
+    try {
+        $storage->store($file['tmp_name'], $uri, $mime);
+    } catch (Throwable $exception) {
+        if ($cloud) {
+            $failed = $db->prepare(
+                "UPDATE assets SET status = 'FAILED', error_message = ?
+                 WHERE id = ? AND status = 'PENDING'"
+            );
+            $failed->execute([StorageAdapter::CLOUD_UPLOAD_FAILED, $id]);
+        }
+        throw $exception;
+    }
+    if (!$cloud) {
+        $insert->execute([$id, $filename, $mime, $uri]);
+    }
+    respond(202, ['id' => $id, 'status' => 'PENDING']);
+} catch (Throwable $exception) {
     error_log($exception->getMessage());
     respond(500, ['error' => 'The upload could not be queued.']);
 }
