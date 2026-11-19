@@ -24,5 +24,6 @@ COPY shared/ ./shared/
 COPY --from=dependencies /app/vendor/ ./vendor/
 COPY ai-worker/*.php ./
 COPY ai-worker/public/ ./public/
+COPY sql/migrations/ ./migrations/
 USER appuser
 EXPOSE 8080

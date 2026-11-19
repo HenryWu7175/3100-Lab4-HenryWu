@@ -15,7 +15,7 @@ services:
       POSTGRES_PASSWORD: ${SMART_ASSETS_DB_PASS:?Set SMART_ASSETS_DB_PASS for local development}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./sql/migrations/001_initial.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U assets -d smart_assets"]
       interval: 2s

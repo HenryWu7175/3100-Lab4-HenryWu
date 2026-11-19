@@ -1,4 +1,19 @@
-# Deployment URL
+# CIS3100 Lab 4 and Smart Assets
+
+## Smart Assets final project
+
+Run the standalone final project from PowerShell:
+
+```powershell
+if (-not (Test-Path .env.smart-assets.local)) {
+    "SMART_ASSETS_DB_PASS=$([guid]::NewGuid().ToString('N'))" | Set-Content -Encoding ascii .env.smart-assets.local
+}
+docker compose --env-file .env.smart-assets.local -f docker-compose.smart-assets.yml up --build --wait --scale ai-worker=2
+```
+
+Open http://localhost:8080 and upload a JPEG to verify the mock worker. See [PROJECT-README.md](PROJECT-README.md) for the four-phase plan, tests, and Cloud Run setup.
+
+## Lab 4 deployment URL
 
 Use `docker-compose.yml` for this application. Set `APP_URL` in `.env` to the
 address users open in their browser:

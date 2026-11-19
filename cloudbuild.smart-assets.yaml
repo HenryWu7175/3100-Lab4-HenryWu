@@ -1,0 +1,75 @@
+timeout: 1800s
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _REGION: us-central1
+  _REPOSITORY: smart-assets
+  _DEPLOY: 'false'
+  _APP_PUBLIC: 'false'
+  _AI_MODE: VERTEX
+  _GCS_BUCKET: SET_ME
+  _CLOUD_SQL_INSTANCE: SET_ME
+  _DB_NAME: smart_assets
+  _DB_RUNTIME_USER: assets_runtime
+  _DB_MIGRATION_USER: postgres
+  _RUNTIME_DB_SECRET: smart-assets-runtime-db-pass
+  _RUNTIME_DB_SECRET_VERSION: '1'
+  _MIGRATION_DB_SECRET: smart-assets-migration-db-pass
+  _MIGRATION_DB_SECRET_VERSION: '1'
+
+steps:
+  - id: build-app
+    name: gcr.io/cloud-builders/docker
+    waitFor: ['-']
+    args: ['build', '-f', 'app-processor/Dockerfile', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/app-processor:$BUILD_ID', '.']
+
+  - id: build-worker
+    name: gcr.io/cloud-builders/docker
+    waitFor: ['-']
+    args: ['build', '-f', 'ai-worker/Dockerfile', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/ai-worker:$BUILD_ID', '.']
+
+  - id: verify
+    name: gcr.io/cloud-builders/docker
+    waitFor: ['build-app', 'build-worker']
+    entrypoint: sh
+    args: ['scripts/test-smart-assets.sh']
+    env:
+      - 'APP_IMAGE=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/app-processor:$BUILD_ID'
+      - 'WORKER_IMAGE=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/ai-worker:$BUILD_ID'
+      - 'TEST_NAMESPACE=smart-assets-$BUILD_ID'
+
+  - id: publish
+    name: gcr.io/cloud-builders/docker
+    entrypoint: sh
+    env:
+      - 'DEPLOY=${_DEPLOY}'
+      - 'APP_IMAGE=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/app-processor:$BUILD_ID'
+      - 'WORKER_IMAGE=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/ai-worker:$BUILD_ID'
+    args:
+      - -ec
+      - |
+        if [ "$$DEPLOY" = true ]; then
+          docker push "$$APP_IMAGE"
+          docker push "$$WORKER_IMAGE"
+        fi
+
+  - id: migrate-and-deploy
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:slim
+    entrypoint: bash
+    args: ['scripts/deploy-smart-assets.sh']
+    env:
+      - 'DEPLOY=${_DEPLOY}'
+      - 'APP_PUBLIC=${_APP_PUBLIC}'
+      - 'AI_MODE=${_AI_MODE}'
+      - 'GCP_PROJECT_ID=$PROJECT_ID'
+      - 'REGION=${_REGION}'
+      - 'GCS_BUCKET=${_GCS_BUCKET}'
+      - 'CLOUD_SQL_INSTANCE=${_CLOUD_SQL_INSTANCE}'
+      - 'DB_NAME=${_DB_NAME}'
+      - 'DB_RUNTIME_USER=${_DB_RUNTIME_USER}'
+      - 'DB_MIGRATION_USER=${_DB_MIGRATION_USER}'
+      - 'RUNTIME_DB_SECRET=${_RUNTIME_DB_SECRET}:${_RUNTIME_DB_SECRET_VERSION}'
+      - 'MIGRATION_DB_SECRET=${_MIGRATION_DB_SECRET}:${_MIGRATION_DB_SECRET_VERSION}'
+      - 'APP_IMAGE=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/app-processor:$BUILD_ID'
+      - 'WORKER_IMAGE=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/ai-worker:$BUILD_ID'

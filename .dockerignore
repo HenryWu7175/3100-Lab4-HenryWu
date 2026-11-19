@@ -7,3 +7,6 @@
 !shared/**
 !composer.json
 !composer.lock
+!sql/
+!sql/migrations/
+!sql/migrations/**

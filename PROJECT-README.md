@@ -12,7 +12,7 @@ The final project will run alongside Lab 4. Lab 4 uses `docker-compose.yml` on p
 | `app-processor/` | PHP/Apache image, Bootstrap 5 dashboard, upload, status, and search endpoints |
 | `ai-worker/` | Worker image, local queue poller, Pub/Sub push endpoint, and asset processing |
 | `shared/` | PDO connection, storage adapter, and shared queue operations |
-| `init.sql` | Initial PostgreSQL schema for a fresh local database |
+| `sql/migrations/` | Versioned PostgreSQL migrations. Compose uses the first migration to initialize a fresh local database. |
 | `cloudbuild.smart-assets.yaml` | Tests, image publication, database migration, and Cloud Run deployment |
 
 ## Phase 1 — Local foundation and atomic queue
@@ -108,3 +108,34 @@ Get-Content -Raw tests/smart-assets-phase3.php | docker compose --env-file .env.
 - Update the top-level `README.md` with the Lab 4 and final-project run commands and configuration.
 
 **Verify.** Merge to `main` and confirm Cloud Build deploys both services. Upload a file at the live app URL and trace the full flow through GCS, Pub/Sub, Cloud Run, Vertex AI, and Cloud SQL. Capture the passing build, worker logs, dashboard result, and search demo for the grading rubric.
+
+### Prepare the deployment resources
+
+1. Enable Artifact Registry, Cloud Build, Cloud Run, Cloud SQL Admin, Secret Manager, Cloud Storage, Pub/Sub, and Vertex AI in the selected project. Create the `smart-assets` Docker repository in `us-central1`.
+2. Create a Cloud SQL PostgreSQL 16 instance and a `smart_assets` database. The pipeline connects through the Cloud Run Cloud SQL Unix socket. Use a Cloud SQL configuration reachable through that connector, such as an instance with a public IP. A private-IP-only instance also needs a configured network path from Cloud Run. [Cloud Run and Cloud SQL](https://docs.cloud.google.com/sql/docs/postgres/connect-run)
+3. Use the Cloud SQL administrator credential for migrations. In an authenticated `psql` session, create the application database role and set its password:
+
+   ```sql
+   CREATE ROLE assets_runtime LOGIN;
+   \password assets_runtime
+   ```
+
+   Store the two passwords in Secret Manager as `smart-assets-migration-db-pass` and `smart-assets-runtime-db-pass`. The migration job creates pgvector and the schema, and grants the runtime role access to read, insert, and update assets. [Cloud SQL PostgreSQL extensions](https://docs.cloud.google.com/sql/docs/postgres/extensions)
+4. Create the runtime identities and apply the following grants. Bind Secret Manager access to each named secret.
+
+   | Identity | Access |
+   | --- | --- |
+   | `smart-assets-app` | Cloud SQL Client, runtime DB secret, Storage Object Creator on the asset bucket, Vertex AI User |
+   | `smart-assets-worker` | Cloud SQL Client, runtime DB secret, Storage Object Viewer on the asset bucket, Vertex AI User |
+   | `smart-assets-migrator` | Cloud SQL Client and migration DB secret |
+   | `pubsub-invoker-sa` | Cloud Run Invoker on `ai-worker`, with Pub/Sub configured to mint its push token |
+   | Cloud Build trigger identity | Logs Writer, Artifact Registry Writer on the image repository, permissions to deploy and set IAM for the Cloud Run services and execute the migration job, and Service Account User on the three runtime identities |
+
+5. Follow the Phase 2 steps to create the bucket and topic. Add the authenticated push subscription after the first deployment creates the private worker. Use `_AI_MODE=MOCK` for a first cloud smoke test if you want to validate delivery before enabling `VERTEX`.
+
+### Run the pipeline
+
+- **Test-only build.** `gcloud builds submit --config=cloudbuild.smart-assets.yaml` builds both images and runs syntax, migration, and search tests. The default `_DEPLOY=false` skips publication and deployment.
+- **Main-branch trigger.** Create a trigger with the repository branch filter `^main$` and build configuration `cloudbuild.smart-assets.yaml`. Set `_DEPLOY=true`, `_GCS_BUCKET` to the bucket name, and `_CLOUD_SQL_INSTANCE` to `PROJECT:REGION:INSTANCE`. Override the secret names or numeric version substitutions if they differ from the defaults. The trigger builds and tests both images, publishes immutable build-ID tags, waits for the migration job, then deploys the worker and app.
+- **Browser test.** The app and worker require IAM by default. Grant the tester Cloud Run Invoker on the app and run `gcloud run services proxy app-processor --region=us-central1 --port=8081`, then open http://localhost:8081. The trigger can set `_APP_PUBLIC=true` to make the app publicly accessible. The worker continues to require IAM.
+- **Local migrations.** After rebuilding the local worker, run `docker compose --env-file .env.smart-assets.local -f docker-compose.smart-assets.yml exec -T ai-worker php migrate.php`. The migration runner records applied files and checksums. Add a new numbered SQL file for each future change. [Cloud Run job deployment](https://docs.cloud.google.com/sdk/gcloud/reference/run/jobs/deploy) · [Cloud Run IAM](https://docs.cloud.google.com/run/docs/securing/managing-access)

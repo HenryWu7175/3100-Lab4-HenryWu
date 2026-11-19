@@ -1,6 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
-CREATE TABLE assets (
+CREATE TABLE IF NOT EXISTS assets (
     id uuid PRIMARY KEY,
     filename text NOT NULL,
     mime_type text NOT NULL,
@@ -16,5 +16,5 @@ CREATE TABLE assets (
     multimodal_embedding vector(1408)
 );
 
-CREATE INDEX ON assets USING hnsw (text_embedding vector_cosine_ops);
-CREATE INDEX ON assets USING hnsw (multimodal_embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS assets_text_embedding_idx ON assets USING hnsw (text_embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS assets_multimodal_embedding_idx ON assets USING hnsw (multimodal_embedding vector_cosine_ops);

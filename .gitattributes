@@ -1,0 +1,2 @@
+scripts/deploy-smart-assets.sh text eol=lf
+scripts/test-smart-assets.sh text eol=lf
