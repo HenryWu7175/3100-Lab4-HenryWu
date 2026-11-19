@@ -2,8 +2,10 @@
 declare(strict_types=1);
 
 /** Store PHP session state in PostgreSQL so requests can use different instances. */
-final class DatabaseSessionHandler implements SessionHandlerInterface
+final class DatabaseSessionHandler implements SessionHandlerInterface, SessionUpdateTimestampHandlerInterface
 {
+    private ?string $lockedId = null;
+
     public function __construct(private PDO $db, private int $lifetime = 3600) {}
 
     private function key(string $id): string
@@ -12,12 +14,25 @@ final class DatabaseSessionHandler implements SessionHandlerInterface
     }
 
     public function open(string $path, string $name): bool { return true; }
-    public function close(): bool { return true; }
+    public function close(): bool
+    {
+        if ($this->lockedId !== null) {
+            $query = $this->db->prepare('SELECT pg_advisory_unlock(hashtextextended(?, 0))');
+            $query->execute([$this->lockedId]);
+            $this->lockedId = null;
+        }
+        return true;
+    }
 
     public function read(string $id): string|false
     {
+        // Serialize simultaneous requests for the same session, including polls.
+        $this->close();
+        $this->lockedId = $this->key($id);
+        $lock = $this->db->prepare('SELECT pg_advisory_lock(hashtextextended(?, 0))');
+        $lock->execute([$this->lockedId]);
         $query = $this->db->prepare('SELECT data FROM auth_sessions WHERE id_hash = ? AND expires_at > now()');
-        $query->execute([$this->key($id)]);
+        $query->execute([$this->lockedId]);
         $data = $query->fetchColumn();
         return $data === false ? '' : $data;
     }
@@ -41,5 +56,17 @@ final class DatabaseSessionHandler implements SessionHandlerInterface
     public function gc(int $max_lifetime): int|false
     {
         return $this->db->exec('DELETE FROM auth_sessions WHERE expires_at <= now()');
+    }
+
+    public function validateId(string $id): bool
+    {
+        $query = $this->db->prepare('SELECT 1 FROM auth_sessions WHERE id_hash = ? AND expires_at > now()');
+        $query->execute([$this->key($id)]);
+        return $query->fetchColumn() !== false;
+    }
+
+    public function updateTimestamp(string $id, string $data): bool
+    {
+        return $this->write($id, $data);
     }
 }
