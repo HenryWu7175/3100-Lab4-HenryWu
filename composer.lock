@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "74707333c95e09575e535d672e34d526",
+    "content-hash": "95054fed7e963d55725918ba55ceddc3",
     "packages": [
         {
             "name": "brick/math",
@@ -212,6 +212,57 @@
             },
             "time": "2026-10-28T23:00:54+00:00",
             "published-time": "2026-10-29T13:53:15+00:00"
+        },
+        {
+            "name": "google/cloud-ai-platform",
+            "version": "v1.68.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/googleapis/google-cloud-php-ai-platform.git",
+                "reference": "0e34a42ca908802fd820cee6b4ae6504d46df444"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/googleapis/google-cloud-php-ai-platform/zipball/0e34a42ca908802fd820cee6b4ae6504d46df444",
+                "reference": "0e34a42ca908802fd820cee6b4ae6504d46df444",
+                "shasum": ""
+            },
+            "require": {
+                "google/gax": "^1.38.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.0"
+            },
+            "suggest": {
+                "ext-grpc": "Enables use of gRPC, a universal high-performance RPC framework created by Google.",
+                "ext-protobuf": "Provides a significant increase in throughput over the pure PHP protobuf implementation. See https://cloud.google.com/php/grpc for installation instructions."
+            },
+            "type": "library",
+            "extra": {
+                "component": {
+                    "id": "cloud-ai-platform",
+                    "path": "AiPlatform",
+                    "entry": null,
+                    "target": "googleapis/google-cloud-php-ai-platform.git"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Google\\Cloud\\AIPlatform\\": "src",
+                    "GPBMetadata\\Google\\Cloud\\Aiplatform\\": "metadata"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Google Cloud Ai Platform Client for PHP",
+            "support": {
+                "source": "https://github.com/googleapis/google-cloud-php-ai-platform/tree/v1.68.0"
+            },
+            "time": "2026-11-17T00:25:19+00:00",
+            "published-time": "2026-11-17T19:15:13+00:00"
         },
         {
             "name": "google/cloud-core",

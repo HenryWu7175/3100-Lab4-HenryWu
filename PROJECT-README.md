@@ -61,7 +61,7 @@ gcloud storage buckets create "gs://$bucket" --project=$project --location=us-ce
 gcloud pubsub topics create asset-upload-topic --project=$project
 gcloud iam service-accounts create pubsub-invoker-sa --project=$project
 gcloud run services add-iam-policy-binding ai-worker --project=$project --region=us-central1 --member="serviceAccount:$invoker" --role=roles/run.invoker
-gcloud pubsub subscriptions create asset-upload-push --project=$project --topic=asset-upload-topic --push-endpoint="$workerUrl/worker.php" --push-auth-service-account=$invoker --push-auth-token-audience=$workerUrl
+gcloud pubsub subscriptions create asset-upload-push --project=$project --topic=asset-upload-topic --push-endpoint="$workerUrl/worker.php" --push-auth-service-account=$invoker --push-auth-token-audience=$workerUrl --ack-deadline=240 --min-retry-delay=10s --max-retry-delay=120s
 gcloud storage buckets notifications create "gs://$bucket" --project=$project --topic=asset-upload-topic --event-types=OBJECT_FINALIZE --payload-format=json
 ```
 
@@ -69,12 +69,36 @@ Check that the Cloud Storage service agent has `roles/pubsub.publisher` on the t
 
 ## Phase 3 — Vertex AI and cross-modal search
 
-- Configure `GEMINI_MODEL`, `TEXT_EMBED_MODEL`, and `MULTIMODAL_EMBED_MODEL` through environment variables. Before implementation, verify model availability in `us-central1`, supported media, and output dimensions.
+- Configure the model IDs and locations through environment variables. Gemini 3.5 Flash uses the `global` endpoint. Both embedding calls use `us-central1` by default.
 - Use the Vertex AI SDK to generate image tags and captions, PDF summaries, and audio transcripts. Request structured JSON, validate it before persistence, and use bounded exponential backoff for HTTP 429 responses.
 - Populate the 768-dimensional text vector with captions and tags, summaries, or transcripts. Use `multimodalembedding@001` to create 1,408-dimensional vectors from images directly and from extracted text for PDFs and audio.
 - Add `app-processor/public/search.php` for text or transient query-image uploads. Use the same multimodal model for assets and queries, order by cosine distance, and report similarity as `1 - (multimodal_embedding <=> :vec)`. Provide a text-only search option that uses the 768-dimensional index.
 
 **Verify.** Upload an image, a PDF, and an audio file. Check the structured metadata in the detail modal, then run a text search and a query-image search. Confirm relevant results rank higher. Exercise unsupported uploads, invalid model output, and rate-limit recovery.
+
+### Enable Vertex AI in the GCP test environment
+
+Enable the Vertex AI API and give the app and worker runtime identities `roles/aiplatform.user` in the model project. Grant the worker `roles/storage.objectViewer` on the asset bucket so it can send private GCS files to Vertex. Keep the asset bucket and Vertex project in the same GCP project for the live test. Set the worker request timeout to at least 240 seconds, and use the Phase 2 subscription deadline and retry settings.
+
+| Environment variable | Configuration |
+| --- | --- |
+| `AI_MODE` | Set to `VERTEX` on the app and HTTP worker. The local Compose stack defaults to mock processing. |
+| `GCP_PROJECT_ID` | GCP project with Vertex AI enabled |
+| `GEMINI_MODEL` | Defaults to `gemini-3.5-flash` |
+| `GEMINI_LOCATION` | Defaults to `global` |
+| `TEXT_EMBED_MODEL` | Defaults to `gemini-embedding-001` with 768 output dimensions |
+| `MULTIMODAL_EMBED_MODEL` | Defaults to `multimodalembedding@001` with 1,408 output dimensions |
+| `VERTEX_EMBED_LOCATION` | Defaults to `us-central1` |
+
+Upload new assets after enabling Vertex mode. Completed mock records have empty vectors and are excluded from search. Recreate embeddings for existing assets before switching to a different model so queries and assets share the same vector space. The cross-modal model uses the first 32 tokens of text, so the worker sends the generated summary for PDFs and audio. It also includes the transcript when creating the separate text vector. [Gemini 3.5 Flash](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-5-flash) · [Multimodal embedding limits](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/get-multimodal-embeddings)
+
+### Run the Phase 3 check locally
+
+With the Compose stack running, use PowerShell to test SDK request serialization, rate-limit recovery with simulated responses, metadata validation, and pgvector ranking. The test fixture rows are rolled back.
+
+```powershell
+Get-Content -Raw tests/smart-assets-phase3.php | docker compose --env-file .env.smart-assets.local -f docker-compose.smart-assets.yml exec -T app-processor php
+```
 
 ## Phase 4 — Cloud Run, secrets, and CI/CD
 

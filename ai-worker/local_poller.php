@@ -4,6 +4,10 @@ declare(strict_types=1);
 require __DIR__ . '/shared/Database.php';
 require __DIR__ . '/AssetProcessor.php';
 
+if (getenv('AI_MODE') === 'VERTEX') {
+    throw new RuntimeException('Vertex processing requires a cloud storage event. Use mock mode for local uploads.');
+}
+
 $db = connect_database();
 while (true) {
     $asset = $db->query(<<<'SQL'

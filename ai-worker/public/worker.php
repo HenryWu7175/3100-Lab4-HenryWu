@@ -49,7 +49,7 @@ try {
             OR (status = 'FAILED' AND error_message = :upload_error)
             OR (status = 'PROCESSING' AND claimed_until <= now())
         )
-        RETURNING id, mime_type, claim_token
+        RETURNING id, mime_type, storage_uri, claim_token
         SQL);
     $claim->execute(['id' => $match[1], 'uri' => $uri, 'upload_error' => StorageAdapter::CLOUD_UPLOAD_FAILED]);
     $asset = $claim->fetch();
@@ -64,5 +64,19 @@ try {
     http_response_code($state->fetchColumn() === 'PROCESSING' ? 503 : 200);
 } catch (Throwable $exception) {
     error_log($exception->getMessage());
-    http_response_code(500);
+    if ($exception instanceof \Google\ApiCore\ApiException
+        && in_array($exception->getStatus(), ['RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'DEADLINE_EXCEEDED'], true)
+        && !empty($asset)
+    ) {
+        try {
+            $release = $db->prepare("UPDATE assets SET status = 'PENDING', claim_token = NULL, claimed_until = NULL
+                                     WHERE id = ? AND claim_token = ?");
+            $release->execute([$asset['id'], $asset['claim_token']]);
+        } catch (PDOException $releaseError) {
+            error_log($releaseError->getMessage());
+        }
+        http_response_code(503);
+    } else {
+        http_response_code(500);
+    }
 }
