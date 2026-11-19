@@ -48,6 +48,8 @@ try {
         }
         $db->exec("GRANT USAGE ON SCHEMA public TO \"$runtimeRole\"");
         $db->exec("GRANT SELECT, INSERT, UPDATE ON TABLE public.assets TO \"$runtimeRole\"");
+        $db->exec("GRANT SELECT, INSERT, UPDATE ON TABLE public.users TO \"$runtimeRole\"");
+        $db->exec("GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.auth_sessions TO \"$runtimeRole\"");
     }
     $db->commit();
 } catch (Throwable $exception) {
