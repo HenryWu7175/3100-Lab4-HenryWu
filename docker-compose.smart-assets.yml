@@ -27,7 +27,15 @@ services:
       dockerfile: app-processor/Dockerfile
     ports:
       - "127.0.0.1:8080:8080"
-    environment: *database-env
+    environment:
+      <<: *database-env
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_SECURITY: ${SMTP_SECURITY:-tls}
     volumes:
       - uploads:/var/www/html/storage/uploads
     depends_on:

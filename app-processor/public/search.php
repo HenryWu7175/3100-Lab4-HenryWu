@@ -1,11 +1,14 @@
 <?php
 declare(strict_types=1);
 
-require dirname(__DIR__) . '/shared/Database.php';
+require dirname(__DIR__) . '/shared/Auth.php';
 require dirname(__DIR__) . '/shared/AssetSearch.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
+$db = connect_database();
+start_auth_session($db);
+$userId = require_user(true);
 
 function search_response(int $status, array $body): never
 {
@@ -18,6 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Allow: POST');
     search_response(405, ['error' => 'Use POST to search assets.']);
 }
+require_csrf();
+session_write_close();
 if (getenv('AI_MODE') !== 'VERTEX') {
     search_response(503, ['error' => 'Search requires Vertex AI mode.']);
 }
@@ -56,7 +61,6 @@ if ($hasImage) {
 
 try {
     require_once dirname(__DIR__) . '/shared/VertexAi.php';
-    $db = connect_database();
     $vertex = new VertexAi();
     if ($hasImage) {
         $bytes = file_get_contents($image['tmp_name']);
@@ -67,7 +71,7 @@ try {
     } else {
         $vector = $textOnly ? $vertex->textEmbedding($query, true) : $vertex->multimodalTextEmbedding($query);
     }
-    search_response(200, search_assets($db, $vector, $textOnly));
+    search_response(200, search_assets($db, $vector, $textOnly, $userId));
 } catch (\Google\ApiCore\ApiException $exception) {
     error_log($exception->getMessage());
     [$status, $message] = match ($exception->getStatus()) {

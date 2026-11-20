@@ -21,6 +21,8 @@ COPY --from=extensions /usr/local/etc/php/conf.d/docker-php-ext-pdo_pgsql.ini /u
 COPY --from=extensions /usr/local/etc/php/conf.d/docker-php-ext-bcmath.ini /usr/local/etc/php/conf.d/
 RUN printf 'upload_max_filesize=10M\npost_max_size=11M\n' > /usr/local/etc/php/conf.d/uploads.ini
 COPY shared/ /var/www/html/shared/
+COPY www/GoogleAuthenticator.php /var/www/html/shared/GoogleAuthenticator.php
+COPY www/PHPMailer/ /var/www/html/shared/PHPMailer/
 COPY --from=dependencies /app/vendor/ /var/www/html/vendor/
 COPY app-processor/public/ /var/www/html/public/
 USER appuser

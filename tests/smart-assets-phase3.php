@@ -94,19 +94,20 @@ check(end($requests)[1]['instances'][0]['image']['bytesBase64Encoded'] === 'Ymxv
 $db = connect_database();
 $db->beginTransaction();
 try {
+    $userId = $db->query("INSERT INTO users (email, password_hash) VALUES ('phase3-test@example.invalid', 'test') RETURNING id")->fetchColumn();
     $insert = $db->prepare(<<<'SQL'
-        INSERT INTO assets (id, filename, mime_type, storage_uri, status, extracted_metadata, text_embedding, multimodal_embedding)
-        VALUES (gen_random_uuid(), ?, 'application/pdf', 'gs://phase3-test/test.pdf', ?, '{"type":"document"}', ?, ?)
+        INSERT INTO assets (id, filename, mime_type, storage_uri, status, extracted_metadata, text_embedding, multimodal_embedding, user_id)
+        VALUES (gen_random_uuid(), ?, 'application/pdf', 'gs://phase3-test/test.pdf', ?, '{"type":"document"}', ?, ?, ?)
         RETURNING id
         SQL);
-    $insert->execute(['Bicycle guide', 'COMPLETED', $textVector, $multimodal]);
+    $insert->execute(['Bicycle guide', 'COMPLETED', $textVector, $multimodal, $userId]);
     $match = $insert->fetchColumn();
-    $insert->execute(['Weather report', 'COMPLETED', json_encode(unit_vector(768, 1)), json_encode(unit_vector(1408, 1))]);
+    $insert->execute(['Weather report', 'COMPLETED', json_encode(unit_vector(768, 1)), json_encode(unit_vector(1408, 1)), $userId]);
     $other = $insert->fetchColumn();
-    $insert->execute(['Pending bicycle guide', 'PENDING', $textVector, $multimodal]);
+    $insert->execute(['Pending bicycle guide', 'PENDING', $textVector, $multimodal, $userId]);
     $pending = $insert->fetchColumn();
     foreach ([[$textVector, true], [$multimodal, false], [$image, false]] as [$vector, $textOnly]) {
-        $rows = array_values(array_filter(search_assets($db, $vector, $textOnly),
+        $rows = array_values(array_filter(search_assets($db, $vector, $textOnly, $userId),
             static fn (array $row): bool => in_array($row['id'], [$match, $other, $pending], true)));
         check(array_column($rows, 'id') === [$match, $other], 'Search ordering or completed-asset filtering failed.');
         check($rows[0]['similarity'] === 1.0 && $rows[1]['similarity'] === 0.0, 'Cosine similarity is incorrect.');

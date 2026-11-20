@@ -34,5 +34,6 @@ run_with_db() {
 
 run_with_db postgres -e DB_RUNTIME_ROLE=assets_runtime "$WORKER_IMAGE" php migrate.php
 run_with_db postgres -e DB_RUNTIME_ROLE=assets_runtime "$WORKER_IMAGE" php migrate.php
-test "$(docker exec "$database" psql -U postgres -d smart_assets -Atc 'SELECT count(*) FROM schema_migrations')" = 2
+test "$(docker exec "$database" psql -U postgres -d smart_assets -Atc 'SELECT count(*) FROM schema_migrations')" = 4
 run_with_db assets_runtime "$APP_IMAGE" php < tests/smart-assets-phase3.php
+run_with_db assets_runtime "$APP_IMAGE" php < tests/smart-assets-roles.php

@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 
-function search_assets(PDO $db, string $vector, bool $textOnly): array
+function search_assets(PDO $db, string $vector, bool $textOnly, string $userId): array
 {
     $column = $textOnly ? 'text_embedding' : 'multimodal_embedding';
     $statement = $db->prepare("
         SELECT id, filename, mime_type, status, extracted_metadata,
             $column <=> CAST(:vector AS vector) AS distance
         FROM assets
-        WHERE status = 'COMPLETED' AND $column IS NOT NULL
+        WHERE user_id = :user_id AND status = 'COMPLETED' AND $column IS NOT NULL
         ORDER BY distance
         LIMIT 25
     ");
-    $statement->execute(['vector' => $vector]);
+    $statement->execute(['vector' => $vector, 'user_id' => $userId]);
     $results = $statement->fetchAll();
     foreach ($results as &$asset) {
         $asset['similarity'] = 1.0 - (float) $asset['distance'];

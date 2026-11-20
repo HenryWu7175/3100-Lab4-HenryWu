@@ -52,3 +52,20 @@ function require_csrf(): void
         exit('Invalid request token.');
     }
 }
+
+function user_is_admin(PDO $db, string $userId): bool
+{
+    $query = $db->prepare("SELECT 1 FROM users WHERE id = ? AND role = 'admin' AND email_verified_at IS NOT NULL");
+    $query->execute([$userId]);
+    return $query->fetchColumn() !== false;
+}
+
+function require_admin(PDO $db): string
+{
+    $userId = require_user();
+    if (!user_is_admin($db, $userId)) {
+        http_response_code(403);
+        exit('Access denied. Administrators only.');
+    }
+    return $userId;
+}
