@@ -10,6 +10,10 @@ if [[ "$GCS_BUCKET" == SET_ME || "$CLOUD_SQL_INSTANCE" != *:*:* ]]; then
     echo 'Set _GCS_BUCKET and _CLOUD_SQL_INSTANCE on the Cloud Build trigger.' >&2
     exit 1
 fi
+if [[ "$APP_URL" != https://* || "$SMTP_HOST" == SET_ME || "$SMTP_USER" == SET_ME || "$SMTP_FROM" == SET_ME ]]; then
+    echo 'Set the HTTPS _APP_URL and SMTP substitutions on the trigger.' >&2
+    exit 1
+fi
 
 case "$AI_MODE" in
     MOCK|VERTEX) ;;
@@ -38,13 +42,15 @@ service_args=(
     "${cloud_args[@]}"
     --execution-environment=gen2 --port=8080 --invoker-iam-check
     --set-cloudsql-instances="$CLOUD_SQL_INSTANCE"
-    --update-env-vars="$runtime_env" --update-secrets="DB_PASS=$RUNTIME_DB_SECRET"
 )
 
 gcloud run deploy ai-worker "${service_args[@]}" \
     --image="$WORKER_IMAGE" --service-account="smart-assets-worker@$iam_domain" \
+    --update-env-vars="$runtime_env" --update-secrets="DB_PASS=$RUNTIME_DB_SECRET" \
     --no-allow-unauthenticated --timeout=240s --concurrency=4 --max-instances=5
 
 gcloud run deploy app-processor "${service_args[@]}" \
     --image="$APP_IMAGE" --service-account="smart-assets-app@$iam_domain" \
+    --update-env-vars="$runtime_env,APP_URL=$APP_URL,SESSION_SECURE=true,SMTP_HOST=$SMTP_HOST,SMTP_PORT=$SMTP_PORT,SMTP_USER=$SMTP_USER,SMTP_FROM=$SMTP_FROM,SMTP_SECURITY=tls" \
+    --update-secrets="DB_PASS=$RUNTIME_DB_SECRET,SMTP_PASSWORD=$SMTP_SECRET" \
     "$app_access" --timeout=60s --max-instances=5

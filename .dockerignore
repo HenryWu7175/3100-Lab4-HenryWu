@@ -10,3 +10,7 @@
 !sql/
 !sql/migrations/
 !sql/migrations/**
+!www/
+!www/GoogleAuthenticator.php
+!www/PHPMailer/
+!www/PHPMailer/**

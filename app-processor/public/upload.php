@@ -1,9 +1,12 @@
 <?php
 declare(strict_types=1);
 
-require dirname(__DIR__) . '/shared/Database.php';
+require dirname(__DIR__) . '/shared/Auth.php';
 require dirname(__DIR__) . '/shared/StorageAdapter.php';
 header('Content-Type: application/json');
+$db = connect_database();
+start_auth_session($db);
+$userId = require_user(true);
 
 function respond(int $status, array $body): never
 {
@@ -16,6 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Allow: POST');
     respond(405, ['error' => 'Use POST to upload a file.']);
 }
+require_csrf();
+session_write_close();
 
 $file = $_FILES['asset'] ?? null;
 $requestSize = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
@@ -36,17 +41,16 @@ if (!in_array($mime, ['image/jpeg', 'image/png', 'application/pdf', 'audio/mpeg'
 }
 
 try {
-    $db = connect_database();
     $storage = new StorageAdapter();
     $id = $db->query('SELECT gen_random_uuid()')->fetchColumn();
     $filename = mb_scrub(str_replace("\0", '', $file['name']), 'UTF-8');
     $uri = $storage->uri($id, $filename);
     $insert = $db->prepare(
-        'INSERT INTO assets (id, filename, mime_type, storage_uri) VALUES (?, ?, ?, ?)'
+        'INSERT INTO assets (id, filename, mime_type, storage_uri, user_id) VALUES (?, ?, ?, ?, ?)'
     );
     $cloud = str_starts_with($uri, 'gs://');
     if ($cloud) {
-        $insert->execute([$id, $filename, $mime, $uri]);
+        $insert->execute([$id, $filename, $mime, $uri, $userId]);
     }
     try {
         $storage->store($file['tmp_name'], $uri, $mime);
@@ -61,7 +65,7 @@ try {
         throw $exception;
     }
     if (!$cloud) {
-        $insert->execute([$id, $filename, $mime, $uri]);
+        $insert->execute([$id, $filename, $mime, $uri, $userId]);
     }
     respond(202, ['id' => $id, 'status' => 'PENDING']);
 } catch (Throwable $exception) {

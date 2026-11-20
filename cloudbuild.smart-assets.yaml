@@ -6,7 +6,14 @@ substitutions:
   _REGION: us-central1
   _REPOSITORY: smart-assets
   _DEPLOY: 'false'
-  _APP_PUBLIC: 'false'
+  _APP_PUBLIC: 'true'
+  _APP_URL: SET_ME
+  _SMTP_HOST: SET_ME
+  _SMTP_PORT: '587'
+  _SMTP_USER: SET_ME
+  _SMTP_FROM: SET_ME
+  _SMTP_SECRET: smart-assets-smtp-pass
+  _SMTP_SECRET_VERSION: '1'
   _AI_MODE: VERTEX
   _GCS_BUCKET: SET_ME
   _CLOUD_SQL_INSTANCE: SET_ME
@@ -61,6 +68,12 @@ steps:
     env:
       - 'DEPLOY=${_DEPLOY}'
       - 'APP_PUBLIC=${_APP_PUBLIC}'
+      - 'APP_URL=${_APP_URL}'
+      - 'SMTP_HOST=${_SMTP_HOST}'
+      - 'SMTP_PORT=${_SMTP_PORT}'
+      - 'SMTP_USER=${_SMTP_USER}'
+      - 'SMTP_FROM=${_SMTP_FROM}'
+      - 'SMTP_SECRET=${_SMTP_SECRET}:${_SMTP_SECRET_VERSION}'
       - 'AI_MODE=${_AI_MODE}'
       - 'GCP_PROJECT_ID=$PROJECT_ID'
       - 'REGION=${_REGION}'

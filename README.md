@@ -11,7 +11,25 @@ if (-not (Test-Path .env.smart-assets.local)) {
 docker compose --env-file .env.smart-assets.local -f docker-compose.smart-assets.yml up --build --wait --scale ai-worker=2
 ```
 
-Open http://localhost:8080 and upload a JPEG to verify the mock worker. See [PROJECT-README.md](PROJECT-README.md) for the four-phase plan, tests, and Cloud Run setup.
+The merged app is under development. Configure `APP_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM` in the ignored `.env.smart-assets.local` before registering; `SMTP_SECURITY` defaults to `tls`. Restart the app with `docker compose --env-file .env.smart-assets.local -f docker-compose.smart-assets.yml up -d app-processor` after changing them. Open http://localhost:8080, register, verify your email, and enroll an authenticator to reach the dashboard. Use a real inbox or a mail-testing service to receive the verification link.
+
+The ownership migration deletes existing asset records. Previously uploaded files are not automatically deleted from local volumes or cloud storage. See [PROJECT-README.md](PROJECT-README.md) for the project plan, tests, and Cloud Run setup; its pre-authentication instructions are being updated.
+
+### Administrator access
+
+New accounts have the `user` role. To bootstrap the first administrator locally, first register and verify the account, then open PostgreSQL:
+
+```powershell
+docker compose --env-file .env.smart-assets.local -f docker-compose.smart-assets.yml exec postgres-db psql -U assets -d smart_assets
+```
+
+At the `psql` prompt, replace the example email with the verified account and run:
+
+```sql
+UPDATE users SET role = 'admin' WHERE lower(email) = lower('admin@example.com') AND email_verified_at IS NOT NULL;
+```
+
+An `UPDATE 1` result means the account was promoted. Enter `\q` to exit. After completing MFA and signing in, the account can open the Admin dashboard and grant administrator access to other verified users. Cloud administrators must bootstrap the first account through an authorized Cloud SQL administrator connection.
 
 ## Lab 4 deployment URL
 
